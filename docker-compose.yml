@@ -58,6 +58,7 @@ services:
       - N8N_WEBHOOK_BASE=http://n8n:5678/webhook
       - SCHEDULE_WEBHOOK_URL=http://n8n:5678/webhook/schedule-reminder
       - IMMEDIATE_WEBHOOK_URL=http://n8n:5678/webhook/send-notification
+      - WEBHOOK_BASE_URL=http://webapp:3000
       - TZ=Africa/Tunis
     ports:
       - "3000:3000"

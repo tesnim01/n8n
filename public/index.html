@@ -222,7 +222,9 @@
             }
         }
     </style>
-</head>
+
+	<script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
+
 <body>
     <div class="container">
         <div class="header">
@@ -283,7 +285,13 @@
         </div>
     </div>
 
-    <script>
+	<script>
+		const { DateTime } = luxon;
+
+		function getSelectedTimezone() {
+			const sel = document.getElementById('timezone');
+			return (sel && sel.value) ? sel.value : 'Africa/Tunis';
+		}
         // Helpers to format local datetime for input[type="datetime-local"] (no timezone)
         function pad(num) { return String(num).padStart(2, '0'); }
         function toLocalInputValue(date) {
@@ -296,47 +304,27 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        // Set default reminder time to 1 hour from now (respect selected timezone)
-        function setDefaultTime() {
-            const now = new Date();
-            
-            // Get current Tunisia time
-            const tunisiaTime = now.toLocaleString("en-US", {timeZone: "Africa/Tunis"});
-            const tunisiaDate = new Date(tunisiaTime);
-            
-            // Add 1 hour to Tunisia time
-            tunisiaDate.setHours(tunisiaDate.getHours() + 1);
-            
-            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
-            const year = tunisiaDate.getFullYear();
-            const month = String(tunisiaDate.getMonth() + 1).padStart(2, '0');
-            const day = String(tunisiaDate.getDate()).padStart(2, '0');
-            const hours = String(tunisiaDate.getHours()).padStart(2, '0');
-            const minutes = String(tunisiaDate.getMinutes()).padStart(2, '0');
-            
-            document.getElementById('reminder_time').value = `${year}-${month}-${day}T${hours}:${minutes}`;
-        }
+		// Set default reminder time to 1 hour from now in the selected timezone
+		function setDefaultTime() {
+			const tz = getSelectedTimezone();
+			const dt = DateTime.now().setZone(tz).plus({ hours: 1 });
+			document.getElementById('reminder_time').value = dt.toFormat("yyyy-LL-dd'T'HH:mm");
+		}
 
         // Update current time display
-        function updateCurrentTime() {
-            const now = new Date();
-            // Get Tunisia time using toLocaleString with timezone
-            const tunisiaTime = now.toLocaleString("en-US", {
-                timeZone: "Africa/Tunis",
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            });
-            document.getElementById('current_time').textContent = tunisiaTime + ' (Tunisia time)';
-        }
+		function updateCurrentTime() {
+			const tz = getSelectedTimezone();
+			const now = DateTime.now().setZone(tz);
+			document.getElementById('current_time').textContent = `${now.toFormat('yyyy-LL-dd HH:mm:ss')} (${tz})`;
+		}
         
         setDefaultTime();
         updateCurrentTime();
-        document.getElementById('timezone').addEventListener('change', setDefaultTime);
+		document.getElementById('timezone').addEventListener('change', () => {
+			setDefaultTime();
+			updateCurrentTime();
+			loadReminders();
+		});
         
         // Update current time every minute
         setInterval(updateCurrentTime, 1000);
@@ -345,30 +333,26 @@
         document.addEventListener('DOMContentLoaded', loadReminders);
 
         // Handle form submission
-        document.getElementById('reminderForm').addEventListener('submit', async (e) => {
+		document.getElementById('reminderForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
             const formData = new FormData(e.target);
-            const localValue = formData.get('reminder_time'); // e.g. 2025-09-18T12:30 (system local)
-            const tz = formData.get('timezone') || 'Africa/Tunis';
-            
-            // Parse the datetime-local input (always treated as local time)
-            const localDate = new Date(localValue);
-            if (isNaN(localDate.getTime())) {
+			const localValue = formData.get('reminder_time'); // e.g. 2025-09-18T12:30
+			const tz = formData.get('timezone') || 'Africa/Tunis';
+			
+			// Treat input value as time in the selected timezone
+			const dt = DateTime.fromFormat(localValue, "yyyy-LL-dd'T'HH:mm", { zone: tz });
+			if (!dt.isValid) {
                 alert('Please pick a valid date/time.');
                 return;
             }
-            
-            // The datetime-local input is treated as local time by the browser
-            // We need to ensure it's stored as UTC in the database
-            // Since you're in Tunisia (UTC+1), the browser will interpret the input correctly
-            const zonedInstant = localDate;
+			
             const reminderData = {
                 title: formData.get('title'),
                 description: formData.get('description'),
                 email: formData.get('email'),
-                // Send ISO string with timezone (UTC) to backend for unambiguous storage
-                reminder_time: zonedInstant.toISOString()
+				// Convert to UTC ISO string for backend storage
+				reminder_time: dt.toUTC().toISO()
             };
 
             try {
