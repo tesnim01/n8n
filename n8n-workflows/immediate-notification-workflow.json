@@ -1,0 +1,84 @@
+{
+  "name": "Immediate Notification Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "send-notification",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "send-notification"
+    },
+    {
+      "parameters": {
+        "fromEmail": "tesnimelbehi@gmail.com",
+        "toEmail": "={{ $json.body.email }}",
+        "subject": "🔔 URGENT: {{ $json.body.title }}",
+        "message": "Hello!\n\nThis is an immediate notification for: {{ $json.body.title }}\n\nDescription: {{ $json.body.description || 'No description provided' }}\n\nThis notification was sent immediately as requested.\n\nBest regards,\nYour Personal Reminder System",
+        "options": {
+          "host": "smtp.gmail.com",
+          "port": 587,
+          "secure": false,
+          "auth": {
+            "user": "tesnimelbehi@gmail.com",
+            "pass": "cqns snmd fost amal"
+          }
+        }
+      },
+      "id": "send-immediate-email",
+      "name": "Send Immediate Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Immediate notification sent successfully\", \"reminder_id\": $json.id } }}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 200]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send Immediate Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Immediate Email": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "immediate-notification-workflow",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}

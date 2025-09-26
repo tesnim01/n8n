@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Reminder System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .reminders-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .reminder-card {
+            background: white;
+            border: 1px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .reminder-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .reminder-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .reminder-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .reminder-status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-triggered {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-overdue {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .reminder-details {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .reminder-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 14px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .reminder-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .reminder-actions {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 Personal Reminder System</h1>
+            <p>Never miss important tasks with automated email reminders powered by n8n</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Create Reminder Form -->
+            <div class="form-section">
+                <h2>Create New Reminder</h2>
+                <form id="reminderForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Title *</label>
+                            <input type="text" id="title" name="title" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email *</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reminder_time">Reminder Time *</label>
+                        <input type="datetime-local" id="reminder_time" name="reminder_time" required>
+                        <small id="timezone_display" style="color: #666; font-size: 0.9em; margin-top: 5px; display: block;">
+                            Current time: <span id="current_time"></span>
+                        </small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="timezone">Timezone</label>
+                            <select id="timezone" name="timezone">
+                                <option value="Africa/Tunis" selected>Africa/Tunis (recommended)</option>
+                                <option value="UTC">UTC</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn">Create Reminder</button>
+                </form>
+            </div>
+
+            <!-- Reminders List -->
+            <div class="reminders-section">
+                <h2>Your Reminders</h2>
+                <div id="remindersList" class="loading">
+                    Loading reminders...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Helpers to format local datetime for input[type="datetime-local"] (no timezone)
+        function pad(num) { return String(num).padStart(2, '0'); }
+        function toLocalInputValue(date) {
+            const d = new Date(date.getTime());
+            const year = d.getFullYear();
+            const month = pad(d.getMonth() + 1);
+            const day = pad(d.getDate());
+            const hours = pad(d.getHours());
+            const minutes = pad(d.getMinutes());
+            return `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Set default reminder time to 1 hour from now (respect selected timezone)
+        function setDefaultTime() {
+            const now = new Date();
+            
+            // Get current Tunisia time
+            const tunisiaTime = now.toLocaleString("en-US", {timeZone: "Africa/Tunis"});
+            const tunisiaDate = new Date(tunisiaTime);
+            
+            // Add 1 hour to Tunisia time
+            tunisiaDate.setHours(tunisiaDate.getHours() + 1);
+            
+            // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+            const year = tunisiaDate.getFullYear();
+            const month = String(tunisiaDate.getMonth() + 1).padStart(2, '0');
+            const day = String(tunisiaDate.getDate()).padStart(2, '0');
+            const hours = String(tunisiaDate.getHours()).padStart(2, '0');
+            const minutes = String(tunisiaDate.getMinutes()).padStart(2, '0');
+            
+            document.getElementById('reminder_time').value = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+
+        // Update current time display
+        function updateCurrentTime() {
+            const now = new Date();
+            // Get Tunisia time using toLocaleString with timezone
+            const tunisiaTime = now.toLocaleString("en-US", {
+                timeZone: "Africa/Tunis",
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('current_time').textContent = tunisiaTime + ' (Tunisia time)';
+        }
+        
+        setDefaultTime();
+        updateCurrentTime();
+        document.getElementById('timezone').addEventListener('change', setDefaultTime);
+        
+        // Update current time every minute
+        setInterval(updateCurrentTime, 1000);
+
+        // Load reminders on page load
+        document.addEventListener('DOMContentLoaded', loadReminders);
+
+        // Handle form submission
+        document.getElementById('reminderForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const localValue = formData.get('reminder_time'); // e.g. 2025-09-18T12:30 (system local)
+            const tz = formData.get('timezone') || 'Africa/Tunis';
+            
+            // Parse the datetime-local input (always treated as local time)
+            const localDate = new Date(localValue);
+            if (isNaN(localDate.getTime())) {
+                alert('Please pick a valid date/time.');
+                return;
+            }
+            
+            // The datetime-local input is treated as local time by the browser
+            // We need to ensure it's stored as UTC in the database
+            // Since you're in Tunisia (UTC+1), the browser will interpret the input correctly
+            const zonedInstant = localDate;
+            const reminderData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                email: formData.get('email'),
+                // Send ISO string with timezone (UTC) to backend for unambiguous storage
+                reminder_time: zonedInstant.toISOString()
+            };
+
+            try {
+                const response = await fetch('/api/reminders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(reminderData)
+                });
+
+                if (response.ok) {
+                    e.target.reset();
+                    // Reset to default time
+                    setDefaultTime();
+                    loadReminders();
+                    alert('Reminder created successfully!');
+                } else {
+                    const error = await response.json();
+                    alert('Error creating reminder: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error creating reminder. Please try again.');
+            }
+        });
+
+        // Load reminders from API
+        async function loadReminders() {
+            try {
+                const response = await fetch('/api/reminders');
+                const reminders = await response.json();
+                displayReminders(reminders);
+            } catch (error) {
+                console.error('Error loading reminders:', error);
+                document.getElementById('remindersList').innerHTML = 
+                    '<div class="empty-state"><h3>Error loading reminders</h3><p>Please refresh the page to try again.</p></div>';
+            }
+        }
+
+        // Display reminders in the UI
+        function displayReminders(reminders) {
+            const container = document.getElementById('remindersList');
+            
+            if (reminders.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No reminders yet</h3>
+                        <p>Create your first reminder using the form above!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = reminders.map(reminder => `
+                <div class="reminder-card">
+                    <div class="reminder-header">
+                        <div class="reminder-title">${escapeHtml(reminder.title)}</div>
+                        <div class="reminder-status status-${reminder.status}">${reminder.status}</div>
+                    </div>
+                    <div class="reminder-details">
+                        <p><strong>Email:</strong> ${escapeHtml(reminder.email)}</p>
+                        <p><strong>Time:</strong> ${new Date(reminder.reminder_time).toLocaleString("en-US", {timeZone: "Africa/Tunis"})}</p>
+                        ${reminder.description ? `<p><strong>Description:</strong> ${escapeHtml(reminder.description)}</p>` : ''}
+                    </div>
+                    <div class="reminder-actions">
+                        <button class="btn btn-success btn-small" onclick="sendNotification(${reminder.id})">
+                            Send Now
+                        </button>
+                        <button class="btn btn-danger btn-small" onclick="deleteReminder(${reminder.id})">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Send immediate notification
+        async function sendNotification(reminderId) {
+            try {
+                const response = await fetch(`/api/reminders/${reminderId}/notify`, {
+                    method: 'POST'
+                });
+
+                if (response.ok) {
+                    alert('Notification sent successfully!');
+                    loadReminders();
+                } else {
+                    const error = await response.json();
+                    alert('Error sending notification: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error sending notification. Please try again.');
+            }
+        }
+
+        // Delete reminder
+        async function deleteReminder(reminderId) {
+            if (!confirm('Are you sure you want to delete this reminder?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/reminders/${reminderId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadReminders();
+                } else {
+                    const error = await response.json();
+                    alert('Error deleting reminder: ' + error.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error deleting reminder. Please try again.');
+            }
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-refresh reminders every 30 seconds
+        setInterval(loadReminders, 30000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+{
+  "name": "Email Reminder Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "schedule-reminder",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "webhookId": "schedule-reminder"
+    },
+    {
+      "parameters": {
+        "resume": "waitFor",
+        "amount": 1,
+        "unit": "seconds",
+        "dateTime": "={{ new Date($json.body.reminder_time).toISOString() }}"
+
+      },
+      "id": "wait-until",
+      "name": "Wait Until Reminder Time",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [460, 200]
+    },
+    {
+      "parameters": {
+        "fromEmail": "tesnimelbehi@gmail.com",
+        "toEmail": "={{ $json.body.email }}",
+        "subject": "Reminder: {{ $json.body.title }}",
+        "message": "Hello!\n\nThis is a reminder for: {{ $json.body.title }}\n\nDescription: {{ $json.body.description || 'No description provided' }}\n\nReminder Time: {{ $json.body.reminder_time }}\n\nBest regards,\nYour Personal Reminder System",
+        "options": {
+          "host": "smtp.gmail.com",
+          "port": 587,
+          "secure": false,
+          "auth": {
+            "user": "tesnimelbehi@gmail.com",
+            "pass": "csus xdzn newl aehm"
+          }
+        }
+      },
+      "id": "send-email",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [680, 200]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.webhook_url }}",
+        "options": {}
+      },
+      "id": "trigger-webhook",
+      "name": "Trigger Webhook",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"message\": \"Reminder scheduled successfully\", \"reminder_id\": $json.id } }}"
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1120, 200]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": false, \"message\": \"Reminder time is in the past\", \"reminder_id\": $json.id } }}"
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [680, 400]
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait Until Reminder Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait Until Reminder Time": {
+      "main": [
+        [
+          {
+            "node": "Send Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "main": [
+        [
+          {
+            "node": "Trigger Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trigger Webhook": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {},
+  "versionId": "1",
+  "id": "email-reminder-workflow",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {}
+}
